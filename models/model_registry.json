@@ -1,0 +1,19 @@
+[
+  {
+    "version": 1,
+    "model_path": "models\\grade_model_v1.pkl",
+    "trained_at": "2026-02-08T20:31:52.674277",
+    "selection_metric": "macro_f1",
+    "model_name": "random_forest",
+    "metrics": {
+      "accuracy": 0.621875,
+      "macro_f1": 0.3776212237411398
+    },
+    "cgpa_rmse": 0.643645059903355,
+    "risk_metrics": {
+      "recall": 0.9672489082969432,
+      "f1": 0.9465811965811965,
+      "roc_auc": 0.9635386447613522
+    }
+  }
+]

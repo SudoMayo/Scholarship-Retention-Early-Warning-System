@@ -26,11 +26,10 @@ Students at Vijaybhoomi University must maintain a CGPA >= 7.0 to retain scholar
 - Streamlit and Plotly for the dashboard
 
 Official CGPA formula:
+
 $$
 CGPA = \frac{\sum(\text{Course Credit} \times \text{Grade Point})}{\sum(\text{Course Credit})}
 $$
-
-
 
 ![Architecture overview](./image.png)
 

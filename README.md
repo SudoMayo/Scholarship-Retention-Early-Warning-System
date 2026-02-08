@@ -23,6 +23,13 @@ $$
 CGPA = \frac{\sum(\text{Course Credit} \times \text{Grade Point})}{\sum(\text{Course Credit})}
 $$
 
+## Tech Stack
+- Python 3.11
+- SQLite for SQL storage
+- pandas, numpy for data handling
+- scikit-learn and XGBoost for models
+- Streamlit and Plotly for the dashboard
+
 ![Architecture overview](./image.png)
 
 ## Quick Start

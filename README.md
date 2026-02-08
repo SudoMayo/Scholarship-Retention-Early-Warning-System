@@ -1,6 +1,6 @@
 # ScholarGuard: Scholarship Retention Early Warning System
 
-ScholarGuard is a hybrid decision-support system for early warning of scholarship risk. It predicts course-grade categories using traditional ML and then applies the official CGPA formula to determine projected scholarship risk.
+ScholarGuard is a hybrid decision-support system for early warning of scholarship risk. It predicts course-grade categories using traditional ML and then applies the official CGPA formula to determine projected scholarship risk. The system is advisory only and never automates scholarship decisions.
 
 ## Problem Statement
 Students at Vijaybhoomi University must maintain a CGPA >= 7.0 to retain scholarships. Currently, eligibility is checked only at year end. ScholarGuard predicts likely grade outcomes during the term and computes projected CGPA to enable early intervention.
@@ -11,6 +11,17 @@ Students at Vijaybhoomi University must maintain a CGPA >= 7.0 to retain scholar
 - dashboard/ - Streamlit UI for analytics and prediction
 - models/ - serialized models and metrics registry
 - data/ - local SQLite database (not committed)
+
+## Architecture Summary
+1) Generate or ingest data into SQLite.
+2) Train traditional ML models to predict course-grade categories.
+3) Apply official grade-point mapping and CGPA formula to project scholarship risk.
+4) Serve analytics and predictions via a dashboard.
+
+Official CGPA formula:
+$$
+CGPA = \frac{\sum(\text{Course Credit} \times \text{Grade Point})}{\sum(\text{Course Credit})}
+$$
 
 ## Quick Start
 1) Create a virtual environment and install dependencies:
@@ -25,8 +36,29 @@ Students at Vijaybhoomi University must maintain a CGPA >= 7.0 to retain scholar
 4) Launch dashboard:
    streamlit run dashboard/app.py
 
+5) Open the app:
+   http://localhost:8501
+
 ## SQL Storage
 All records are stored in SQLite at data/academic.db (table: academic_records). This satisfies the SQL storage requirement and supports periodic appends for retraining.
+
+## Data Pipeline Notes
+- The pipeline is script-based, not notebook-based, so it is production-ready and repeatable.
+- CSV output is kept for auditability and quick inspection, but SQLite is the primary source of truth.
+- If you want a pure SQL-only pipeline, you can disable CSV output by removing the CSV write in the generator.
+
+## Models and Evaluation
+Models trained:
+- Logistic Regression (multinomial)
+- Random Forest Classifier
+- XGBoost Classifier
+
+Model selection metric:
+- Macro F1 on grade prediction
+
+Additional evaluations:
+- CGPA projection RMSE
+- Scholarship risk recall, F1, and ROC-AUC
 
 ## Maintenance Timeline
 - Retraining cadence: end of each semester after official grades release
@@ -36,3 +68,11 @@ All records are stored in SQLite at data/academic.db (table: academic_records). 
 ## Notes
 - The pipeline is reproducible via fixed random seeds.
 - Scholarship decisions remain advisory; the system provides early-warning projections only.
+
+## Key Files
+- Data generator: [data_generator/generate_academic_data.py](data_generator/generate_academic_data.py)
+- Training pipeline: [src/train_model.py](src/train_model.py)
+- Evaluation utilities: [src/evaluate.py](src/evaluate.py)
+- CGPA engine: [src/cgpa_engine.py](src/cgpa_engine.py)
+- Prediction utilities: [src/predict.py](src/predict.py)
+- Dashboard app: [dashboard/app.py](dashboard/app.py)

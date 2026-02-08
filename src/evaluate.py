@@ -23,6 +23,7 @@ def cgpa_rmse(
 
     actual = []
     projected = []
+    # Aggregate predictions at student level to compute CGPA error.
     for student_id, group in df.groupby("student_id"):
         credits = group["credit_value"].to_numpy(dtype=float)
         actual_points = group["y_true"].to_numpy(dtype=float)
@@ -51,6 +52,7 @@ def scholarship_metrics(
     predicted_risks = []
     risk_probs = []
 
+    # Compute risk labels and probabilities per student.
     for student_id, group in df.groupby("student_id"):
         credits = group["credit_value"].to_numpy(dtype=float)
         actual_points = group["y_true"].to_numpy(dtype=float)

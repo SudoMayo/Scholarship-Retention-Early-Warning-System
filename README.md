@@ -65,6 +65,17 @@ Additional evaluations:
 - Retraining triggers: grade distribution shift > 10%, recall drop > 15%, policy changes
 - Model versioning: models/grade_model_vX.pkl with registry in models/model_registry.json
 
+## Dashboard
+Run locally:
+- streamlit run dashboard/app.py
+- Open http://localhost:8501
+
+Tabs and features:
+- Individual Projection: live prediction input, projected CGPA, scholarship risk, primary drivers, suggested interventions.
+- Intervention Simulator: adjust midterm, attendance, and assignment improvements to see updated grades, CGPA, and risk.
+- Cohort Analytics: filters, KPIs, grade distributions, score relationships, and at risk student list.
+- Model Monitoring and Maintenance Timeline: model version, metrics, and retraining guidance.
+
 ## Notes
 - The pipeline is reproducible via fixed random seeds.
 - Scholarship decisions remain advisory; the system provides early-warning projections only.
@@ -76,3 +87,4 @@ Additional evaluations:
 - CGPA engine: [src/cgpa_engine.py](src/cgpa_engine.py)
 - Prediction utilities: [src/predict.py](src/predict.py)
 - Dashboard app: [dashboard/app.py](dashboard/app.py)
+

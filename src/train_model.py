@@ -53,6 +53,7 @@ def train_and_evaluate(db_path: str, models_dir: Path, seed: int) -> None:
     preprocessor = build_preprocessor(categorical_features, numeric_features)
     class_labels = list(label_encoder.classes_)
 
+    # Train multiple traditional models and select by macro F1.
     models = {
         "logistic_regression": LogisticRegression(max_iter=300, multi_class="multinomial"),
         "random_forest": RandomForestClassifier(
@@ -104,6 +105,7 @@ def train_and_evaluate(db_path: str, models_dir: Path, seed: int) -> None:
     models_dir.mkdir(parents=True, exist_ok=True)
     model_path = models_dir / f"grade_model_v{version}.pkl"
 
+    # Bundle model and metadata for prediction and dashboard use.
     artifact = {
         "model": best["pipeline"],
         "label_encoder": label_encoder,

@@ -41,6 +41,7 @@ def expected_cgpa_from_probs(
     class_labels: List[str],
     credits: np.ndarray,
 ) -> float:
+    # Convert class probabilities into expected grade points.
     grade_points = np.array([GRADE_POINTS[label] for label in class_labels], dtype=float)
     expected_points = prob_matrix @ grade_points
     return compute_cgpa(expected_points, credits)
@@ -51,7 +52,7 @@ def scholarship_risk_from_cgpa(cgpa: float) -> int:
 
 
 def scholarship_prob_from_cgpa(cgpa: float) -> float:
-    # Smooth probability around the 7.0 threshold
+    # Smooth probability around the 7.0 threshold.
     return float(1.0 / (1.0 + np.exp((cgpa - 7.0) * 2.0)))
 
 

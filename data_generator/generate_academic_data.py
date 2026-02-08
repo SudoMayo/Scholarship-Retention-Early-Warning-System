@@ -62,6 +62,7 @@ def generate_data(n_students: int, courses_per_student: int, seed: int) -> pd.Da
             quiz = np.clip(rng.normal(baseline - 2, 12), 0, 100)
             prereq_grade = np.clip(rng.normal(prev_gpa * 10, 12), 0, 100)
 
+            # Weighted score combines performance and course difficulty.
             latent_score = (
                 0.35 * midterm
                 + 0.2 * assignment
@@ -98,6 +99,7 @@ def write_to_sqlite(df: pd.DataFrame, db_path: Path, run_id: str) -> None:
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
     with sqlite3.connect(db_path) as conn:
+        # Keep a simple schema to support appends across runs.
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS academic_records (

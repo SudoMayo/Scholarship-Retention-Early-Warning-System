@@ -26,6 +26,7 @@ def predict_for_courses(df: pd.DataFrame, artifact: dict) -> dict:
     model = artifact["model"]
     class_labels = artifact["class_labels"]
 
+    # Use probability outputs to compute expected CGPA.
     proba = model.predict_proba(df)
     pred_idx = proba.argmax(axis=1)
     pred_labels = [class_labels[i] for i in pred_idx]

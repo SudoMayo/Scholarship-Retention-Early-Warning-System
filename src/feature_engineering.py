@@ -43,6 +43,7 @@ def make_train_test_split(
     X = df[features].copy()
     y = df[target_col].copy()
 
+    # Keep metadata for CGPA and risk evaluation at student level.
     meta_cols = ["student_id", "course_id", "credit_value"]
     meta_test = df[meta_cols].copy()
 

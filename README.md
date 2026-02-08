@@ -23,6 +23,8 @@ $$
 CGPA = \frac{\sum(\text{Course Credit} \times \text{Grade Point})}{\sum(\text{Course Credit})}
 $$
 
+![Architecture overview](./image.png)
+
 ## Quick Start
 1) Create a virtual environment and install dependencies:
    pip install -r requirements.txt
@@ -69,6 +71,11 @@ Additional evaluations:
 Run locally:
 - streamlit run dashboard/app.py
 - Open http://localhost:8501
+
+![Dashboard tab 1](./image-1.png)
+![Dashboard tab 2](./image-2.png)
+![Dashboard tab 3](./image-3.png)
+![Dashboard tab 4](./image-4.png)
 
 Tabs and features:
 - Individual Projection: live prediction input, projected CGPA, scholarship risk, primary drivers, suggested interventions.

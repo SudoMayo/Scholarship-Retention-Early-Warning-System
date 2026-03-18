@@ -15,5 +15,22 @@
       "f1": 0.9465811965811965,
       "roc_auc": 0.9635386447613522
     }
+  },
+  {
+    "version": 1,
+    "model_path": "models\\grade_model_v1.pkl",
+    "trained_at": "2026-03-18T08:55:01.426963",
+    "selection_metric": "macro_f1",
+    "model_name": "xgboost",
+    "metrics": {
+      "accuracy": 0.6291666666666667,
+      "macro_f1": 0.5333877855433838
+    },
+    "cgpa_rmse": 0.3879958099030931,
+    "risk_metrics": {
+      "recall": 0.9773049645390071,
+      "f1": 0.9793887704335466,
+      "roc_auc": 0.9909959913660191
+    }
   }
 ]

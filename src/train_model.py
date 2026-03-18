@@ -33,6 +33,8 @@ def train_and_evaluate(db_path: str, models_dir: Path, seed: int) -> None:
         "attendance_rate",
         "assignment_average",
         "quiz_average",
+        "study_hours_per_week",
+        "extracurricular_load",
         "previous_sem_gpa",
         "prerequisite_grade",
         "course_difficulty_index",
@@ -55,7 +57,7 @@ def train_and_evaluate(db_path: str, models_dir: Path, seed: int) -> None:
 
     # Train multiple traditional models and select by macro F1.
     models = {
-        "logistic_regression": LogisticRegression(max_iter=300, multi_class="multinomial"),
+        "logistic_regression": LogisticRegression(max_iter=300),
         "random_forest": RandomForestClassifier(
             n_estimators=300, random_state=seed, n_jobs=-1
         ),

@@ -36,6 +36,42 @@ def compute_student_cgpa(df: pd.DataFrame, grade_col: str) -> pd.DataFrame:
     return pd.DataFrame(results)
 
 
+def compute_semester_cgpa(df: pd.DataFrame, grade_col: str) -> pd.DataFrame:
+    """Compute CGPA per student per semester."""
+    results = []
+    for (student_id, semester), group in df.groupby(["student_id", "semester"]):
+        points = group[grade_col].map(GRADE_POINTS).to_numpy(dtype=float)
+        credits = group["credit_value"].to_numpy(dtype=float)
+        results.append(
+            {
+                "student_id": student_id,
+                "semester": semester,
+                "semester_gpa": compute_cgpa(points, credits),
+            }
+        )
+    return pd.DataFrame(results)
+
+
+def compute_cgpa_trajectory(df: pd.DataFrame, grade_col: str) -> pd.DataFrame:
+    """Compute cumulative CGPA trajectory across semesters for each student."""
+    results = []
+    for student_id, student_df in df.groupby("student_id"):
+        semesters = sorted(student_df["semester"].unique())
+        for i, sem in enumerate(semesters):
+            # Cumulative up to this semester
+            cum_data = student_df[student_df["semester"] <= sem]
+            points = cum_data[grade_col].map(GRADE_POINTS).to_numpy(dtype=float)
+            credits = cum_data["credit_value"].to_numpy(dtype=float)
+            results.append(
+                {
+                    "student_id": student_id,
+                    "semester": sem,
+                    "cumulative_cgpa": compute_cgpa(points, credits),
+                }
+            )
+    return pd.DataFrame(results)
+
+
 def expected_cgpa_from_probs(
     prob_matrix: np.ndarray,
     class_labels: List[str],

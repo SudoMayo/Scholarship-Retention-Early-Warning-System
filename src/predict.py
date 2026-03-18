@@ -1,11 +1,13 @@
 import argparse
 from pathlib import Path
 import joblib
+import numpy as np
 import pandas as pd
 from src.cgpa_engine import (
     expected_cgpa_from_probs,
     scholarship_prob_from_cgpa,
     risk_category,
+    GRADE_POINTS,
 )
 
 
@@ -31,12 +33,21 @@ def predict_for_courses(df: pd.DataFrame, artifact: dict) -> dict:
     pred_idx = proba.argmax(axis=1)
     pred_labels = [class_labels[i] for i in pred_idx]
 
+    # Confidence: max probability per prediction
+    confidences = proba.max(axis=1).tolist()
+
     credits = df["credit_value"].to_numpy(dtype=float)
     expected_cgpa = expected_cgpa_from_probs(proba, class_labels, credits)
     risk_prob = scholarship_prob_from_cgpa(expected_cgpa)
 
+    # Per-course grade points for detailed output
+    pred_grade_points = [GRADE_POINTS[label] for label in pred_labels]
+
     return {
         "predicted_grades": pred_labels,
+        "predicted_grade_points": pred_grade_points,
+        "confidences": confidences,
+        "probability_matrix": proba,
         "expected_cgpa": expected_cgpa,
         "risk_probability": risk_prob,
         "risk_category": risk_category(risk_prob),

@@ -1,315 +1,309 @@
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# dashboard_charts.py — Plotly figure builders
-# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-import plotly.graph_objects as go
-import plotly.express as px
-from plotly.subplots import make_subplots
-import numpy as np
-import pandas as pd
+"""Plotly chart builders for the SREWS dashboard — Dark Retro Pixel Theme."""
 
-PRIMARY = "#06b6d4"
-SECONDARY = "#8b5cf6"
-COLORWAY = [PRIMARY, SECONDARY, "#f59e0b", "#10b981", "#ef4444", "#ec4899", "#a3e635"]
-RISK_COLORS = {"High Risk": "#ff4757", "Moderate Risk": "#ffa502", "Low Risk": "#2ed573"}
+from __future__ import annotations
+
+from typing import Iterable
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# ── Retro monochrome palette ──────────────────────────────────
+ACCENT     = "#ffffff"
+ACCENT_DIM = "#a0a0a0"
+GOOD       = "#c8c8c8"
+ALERT      = "#ff4444"
+GRID_COLOR = "#2a2a2a"
+SURFACE    = "#111111"
+BG_DARK    = "#0a0a0a"
+TEXT_COLOR  = "#a0a0a0"
+TEXT_BRIGHT = "#ffffff"
 
 BASE_LAYOUT = dict(
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(255,255,255,0.02)",
-    font=dict(family="Space Grotesk, sans-serif", color="#e2e8f0", size=12),
-    title_font=dict(family="Orbitron, monospace", size=15, color="#ffffff"),
-    xaxis=dict(
-        gridcolor="rgba(255,255,255,0.06)",
-        linecolor="rgba(255,255,255,0.1)",
-        tickfont=dict(color="rgba(255,255,255,0.55)", size=11),
-        title_font=dict(color="rgba(255,255,255,0.7)"),
-        showgrid=True, zeroline=False,
-    ),
-    yaxis=dict(
-        gridcolor="rgba(255,255,255,0.06)",
-        linecolor="rgba(255,255,255,0.1)",
-        tickfont=dict(color="rgba(255,255,255,0.55)", size=11),
-        title_font=dict(color="rgba(255,255,255,0.7)"),
-        showgrid=True, zeroline=False,
-    ),
-    margin=dict(l=40, r=20, t=55, b=40),
+    paper_bgcolor=SURFACE,
+    plot_bgcolor=BG_DARK,
+    font=dict(family="VT323, Courier New, monospace", color=TEXT_COLOR, size=16),
+    margin=dict(l=48, r=24, t=64, b=48),
     legend=dict(
-        bgcolor="rgba(255,255,255,0.05)",
-        bordercolor="rgba(255,255,255,0.1)",
-        borderwidth=1,
-        font=dict(color="rgba(255,255,255,0.75)", size=11),
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0,
+        font=dict(color=TEXT_COLOR, size=14),
+        bgcolor="rgba(0,0,0,0)",
     ),
-    hoverlabel=dict(
-        bgcolor="rgba(10,15,35,0.96)",
-        bordercolor="rgba(255,255,255,0.2)",
-        font=dict(family="Space Grotesk", color="white", size=12),
+    title_font=dict(
+        family="'Press Start 2P', monospace",
+        size=11,
+        color=TEXT_BRIGHT,
     ),
-    colorway=COLORWAY,
 )
 
-CHART_CONFIG = {"displayModeBar": False}
+# Axis defaults applied separately to avoid duplicate keyword conflicts
+AXIS_DEFAULTS = dict(
+    gridcolor=GRID_COLOR,
+    zerolinecolor=GRID_COLOR,
+    linecolor=GRID_COLOR,
+    tickfont=dict(color=TEXT_COLOR),
+    title_font=dict(color=TEXT_COLOR),
+)
 
 
-def build_risk_gauge(value, title="Scholarship Risk"):
-    """Build a risk gauge indicator."""
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=value * 100,
-        number={"suffix": "%", "font": {"family": "Orbitron", "size": 40, "color": "white"}},
-        title={"text": title, "font": {"family": "Space Grotesk", "size": 14, "color": "rgba(255,255,255,0.6)"}},
-        gauge={
-            "axis": {"range": [0, 100], "tickcolor": "rgba(255,255,255,0.3)",
-                     "tickfont": {"color": "rgba(255,255,255,0.4)"}},
-            "bar": {"color": PRIMARY, "thickness": 0.3},
-            "bgcolor": "rgba(255,255,255,0.03)",
-            "borderwidth": 0,
-            "steps": [
-                {"range": [0, 30], "color": "rgba(46,213,115,0.15)"},
-                {"range": [30, 60], "color": "rgba(255,165,2,0.15)"},
-                {"range": [60, 100], "color": "rgba(255,71,87,0.15)"},
-            ],
-            "threshold": {
-                "line": {"color": SECONDARY, "width": 3},
-                "thickness": 0.8,
-                "value": value * 100,
-            },
-        },
-    ))
-    fig.update_layout(height=280, **BASE_LAYOUT)
+def _apply_dark_axes(fig: go.Figure) -> go.Figure:
+    """Apply dark theme axis styling to a figure."""
+    fig.update_xaxes(**AXIS_DEFAULTS)
+    fig.update_yaxes(**AXIS_DEFAULTS)
     return fig
 
 
-def build_cgpa_distribution(cgpa_df):
-    """Build CGPA histogram with threshold line."""
-    fig = go.Figure()
-    fig.add_trace(go.Histogram(
-        x=cgpa_df["cgpa"], nbinsx=30,
-        marker=dict(
-            color=cgpa_df["cgpa"].apply(lambda x: PRIMARY if x >= 7 else "#ff4757"),
-            line=dict(width=0),
-        ),
-        opacity=0.8,
-    ))
-    fig.add_vline(x=7.0, line_dash="dash", line_color="#ff4757", line_width=2,
-                  annotation_text="Scholarship Threshold 7.0",
-                  annotation_font_color="#ff4757")
+def risk_distribution_donut_by_department(semester_view: pd.DataFrame) -> go.Figure:
+    """Create one donut per department showing at-risk vs not-at-risk shares."""
+    if semester_view.empty:
+        return go.Figure()
+
+    departments = sorted(semester_view["department"].dropna().unique().tolist())
+    fig = make_subplots(
+        rows=1,
+        cols=max(1, len(departments)),
+        specs=[[{"type": "domain"}] * max(1, len(departments))],
+        subplot_titles=departments,
+    )
+
+    for idx, dept in enumerate(departments, start=1):
+        subset = semester_view[semester_view["department"] == dept]
+        at_risk = int((subset["scholarship_at_risk"] == 1).sum())
+        safe = int((subset["scholarship_at_risk"] == 0).sum())
+        fig.add_trace(
+            go.Pie(
+                labels=["At Risk", "Not At Risk"],
+                values=[at_risk, safe],
+                hole=0.65,
+                marker=dict(
+                    colors=[ALERT, GOOD],
+                    line=dict(color=SURFACE, width=2),
+                ),
+                textinfo="percent",
+                textfont=dict(family="VT323, monospace", size=14, color=TEXT_BRIGHT),
+                showlegend=(idx == 1),
+            ),
+            row=1,
+            col=idx,
+        )
+
     fig.update_layout(
-        title="CGPA Distribution Across All Students",
-        xaxis_title="CGPA", yaxis_title="Count",
-        height=380, **BASE_LAYOUT,
-    )
-    return fig
-
-
-def build_risk_donut(cgpa_df):
-    """Build risk category donut chart."""
-    from src.cgpa_engine import scholarship_prob_from_cgpa, risk_category
-    cgpa_df = cgpa_df.copy()
-    cgpa_df["risk"] = cgpa_df["cgpa"].apply(lambda x: risk_category(scholarship_prob_from_cgpa(x)))
-    counts = cgpa_df["risk"].value_counts()
-    labels = counts.index.tolist()
-    values = counts.values.tolist()
-    colors = [RISK_COLORS.get(l, "#666") for l in labels]
-
-    fig = go.Figure(go.Pie(
-        labels=labels, values=values,
-        hole=0.65,
-        marker=dict(colors=colors, line=dict(color="rgba(0,0,0,0.3)", width=2)),
-        textfont=dict(color="white", family="Space Grotesk", size=13),
-        textinfo="label+percent",
-        pull=[0.05 if l == "High Risk" else 0 for l in labels],
-    ))
-    fig.add_annotation(
-        text=f"<b>{len(cgpa_df)}</b><br><span style='font-size:11px;color:rgba(255,255,255,0.5)'>Students</span>",
-        x=0.5, y=0.5, font=dict(size=22, color="white", family="Orbitron"),
-        showarrow=False,
-    )
-    fig.update_layout(
-        title="Risk Category Breakdown",
-        height=380, showlegend=True, **BASE_LAYOUT,
-    )
-    return fig
-
-
-def build_radar_chart(values, categories, title="Student Profile"):
-    """Build radar/spider chart for student strengths."""
-    fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(
-        r=values + [values[0]],
-        theta=categories + [categories[0]],
-        fill="toself",
-        fillcolor="rgba(6,182,212,0.2)",
-        line=dict(color=PRIMARY, width=2.5),
-        marker=dict(size=6, color=PRIMARY),
-        name="Score",
-    ))
-    fig.update_layout(
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(visible=True, range=[0, 1], showticklabels=False,
-                            gridcolor="rgba(255,255,255,0.08)"),
-            angularaxis=dict(tickfont=dict(color="rgba(255,255,255,0.6)", size=11,
-                                           family="Space Grotesk")),
-        ),
-        showlegend=False, title=title,
-        height=350, **BASE_LAYOUT,
-    )
-    return fig
-
-
-def build_correlation_heatmap(df, columns):
-    """Build feature correlation heatmap."""
-    corr = df[columns].corr()
-    fig = go.Figure(go.Heatmap(
-        z=corr.values, x=corr.columns, y=corr.columns,
-        colorscale=[[0, "#0a0a1a"], [0.5, PRIMARY], [1, SECONDARY]],
-        text=np.round(corr.values, 2), texttemplate="%{text}",
-        textfont=dict(size=10, color="white"),
-        hovertemplate="<b>%{x}</b> vs <b>%{y}</b><br>Correlation: %{z:.3f}<extra></extra>",
-    ))
-    fig.update_layout(title="Feature Correlation Matrix", height=450, **BASE_LAYOUT)
-    return fig
-
-
-def build_sunburst(cgpa_df_with_meta):
-    """Build sunburst: Department → Risk."""
-    fig = px.sunburst(
-        cgpa_df_with_meta, path=["department", "risk_category"],
-        color="risk_category", color_discrete_map=RISK_COLORS,
-    )
-    fig.update_layout(title="Department → Risk Breakdown", height=420, **BASE_LAYOUT)
-    fig.update_traces(textfont=dict(family="Space Grotesk", size=12))
-    return fig
-
-
-def build_trajectory(trajectory_df):
-    """Build CGPA trajectory line chart."""
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=trajectory_df["semester"], y=trajectory_df["cumulative_cgpa"],
-        mode="lines+markers",
-        line=dict(color=PRIMARY, width=3),
-        marker=dict(size=10, color=PRIMARY, line=dict(width=2, color="white")),
-        fill="tozeroy", fillcolor="rgba(6,182,212,0.1)",
-        name="Cumulative CGPA",
-    ))
-    fig.add_hline(y=7.0, line_dash="dash", line_color="#ff4757", line_width=2,
-                  annotation_text="Scholarship Threshold")
-    fig.update_layout(
-        title="CGPA Trajectory Over Semesters",
-        xaxis_title="Semester", yaxis_title="Cumulative CGPA",
-        yaxis_range=[0, 10], height=350, **BASE_LAYOUT,
-    )
-    return fig
-
-
-def build_semester_gpa_bars(sem_gpa_df):
-    """Build semester-wise GPA bar chart."""
-    colors = [PRIMARY if g >= 7 else "#ff4757" for g in sem_gpa_df["semester_gpa"]]
-    fig = go.Figure(go.Bar(
-        x=sem_gpa_df["semester"], y=sem_gpa_df["semester_gpa"],
-        marker_color=colors,
-        text=[f"{g:.2f}" for g in sem_gpa_df["semester_gpa"]],
-        textposition="outside",
-        textfont=dict(color="white", family="Orbitron", size=13),
-    ))
-    fig.add_hline(y=7.0, line_dash="dash", line_color="#ff4757", line_width=2)
-    fig.update_layout(
-        title="Semester-wise GPA", xaxis_title="Semester", yaxis_title="GPA",
-        yaxis_range=[0, 10], height=350, **BASE_LAYOUT,
-    )
-    return fig
-
-
-def build_dept_risk_bars(dept_risk_df):
-    """Build department at-risk percentage bars."""
-    fig = go.Figure(go.Bar(
-        x=dept_risk_df["department"], y=dept_risk_df["at_risk_pct"],
-        marker=dict(
-            color=dept_risk_df["at_risk_pct"],
-            colorscale=[[0, "#2ed573"], [0.5, "#ffa502"], [1, "#ff4757"]],
-        ),
-        text=[f"{v:.1f}%" for v in dept_risk_df["at_risk_pct"]],
-        textposition="outside",
-        textfont=dict(color="white", family="Space Grotesk", size=12),
-    ))
-    fig.update_layout(
-        title="At-Risk % by Department", xaxis_title="Department",
-        yaxis_title="At-Risk %", height=350, coloraxis_showscale=False,
+        title="RISK DISTRIBUTION BY DEPARTMENT",
+        height=360,
         **BASE_LAYOUT,
     )
+    # Style subplot titles
+    for annotation in fig.layout.annotations:
+        annotation.font = dict(
+            family="'Press Start 2P', monospace",
+            size=9,
+            color=TEXT_BRIGHT,
+        )
     return fig
 
 
-def build_grade_distribution_area(data):
-    """Build grade distribution stacked area chart."""
-    grade_by_sem = data.groupby(["semester", "grade_category"]).size().reset_index(name="count")
-    totals = grade_by_sem.groupby("semester")["count"].transform("sum")
-    grade_by_sem["pct"] = grade_by_sem["count"] / totals * 100
+def cgpa_trend_line(semester_view: pd.DataFrame) -> go.Figure:
+    """Average semester CGPA trend line across students."""
+    if semester_view.empty:
+        return go.Figure()
 
-    from src.cgpa_engine import GRADE_POINTS
-    fig = px.area(
-        grade_by_sem, x="semester", y="pct", color="grade_category",
-        category_orders={"grade_category": list(GRADE_POINTS.keys())},
-        color_discrete_sequence=COLORWAY,
+    trend = (
+        semester_view.groupby("semester", as_index=False)["cgpa_this_semester"]
+        .mean()
+        .sort_values("semester")
     )
-    fig.update_layout(
-        title="Grade Distribution Shift Over Semesters",
-        xaxis_title="Semester", yaxis_title="Percentage %",
-        height=380, **BASE_LAYOUT,
-    )
-    return fig
 
-
-def build_model_metrics_radar(metrics, risk_metrics):
-    """Build model performance radar chart."""
-    cats = ["Accuracy", "Macro F1", "Risk Recall", "Risk F1", "Risk AUC"]
-    vals = [
-        metrics["accuracy"], metrics["macro_f1"],
-        risk_metrics.get("recall", 0), risk_metrics.get("f1", 0),
-        risk_metrics.get("roc_auc", 0),
-    ]
     fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(
-        r=vals + [vals[0]], theta=cats + [cats[0]],
-        fill="toself",
-        fillcolor="rgba(139,92,246,0.2)",
-        line=dict(color=SECONDARY, width=2.5),
-        marker=dict(size=8, color=SECONDARY),
-    ))
-    fig.update_layout(
-        polar=dict(
-            bgcolor="rgba(0,0,0,0)",
-            radialaxis=dict(visible=True, range=[0, 1], showticklabels=True,
-                            tickfont=dict(color="rgba(255,255,255,0.4)", size=9),
-                            gridcolor="rgba(255,255,255,0.08)"),
-            angularaxis=dict(tickfont=dict(color="rgba(255,255,255,0.7)", size=12,
-                                           family="Space Grotesk")),
+    fig.add_trace(
+        go.Scatter(
+            x=trend["semester"],
+            y=trend["cgpa_this_semester"],
+            mode="lines+markers",
+            line=dict(color=ACCENT, width=2),
+            marker=dict(size=8, color=ACCENT, symbol="square"),
+            name="AVG CGPA",
+        )
+    )
+    fig.add_hline(
+        y=6.0,
+        line_dash="dash",
+        line_color=ALERT,
+        annotation_text="RISK THRESHOLD",
+        annotation_font=dict(
+            family="'Press Start 2P', monospace",
+            size=8,
+            color=ALERT,
         ),
-        showlegend=False, title="Model Performance Radar",
-        height=400, **BASE_LAYOUT,
     )
+    fig.update_layout(
+        title="CGPA TREND BY SEMESTER",
+        xaxis_title="SEMESTER",
+        yaxis_title="AVERAGE CGPA",
+        height=360,
+        **BASE_LAYOUT,
+    )
+    fig.update_yaxes(range=[0, 10])
+    _apply_dark_axes(fig)
     return fig
 
 
-def build_scenario_comparison(results_dict):
-    """Build scenario comparison bar chart."""
-    labels = list(results_dict.keys())
-    cgpas = [r["expected_cgpa"] for r in results_dict.values()]
-    colors = [PRIMARY if i == 0 else COLORWAY[i % len(COLORWAY)] for i in range(len(labels))]
+def feature_correlation_heatmap(data: pd.DataFrame, features: Iterable[str]) -> go.Figure:
+    """Correlation matrix heatmap for numeric features — dark theme."""
+    cols = [f for f in features if f in data.columns]
+    if not cols:
+        return go.Figure()
 
-    fig = go.Figure()
-    for i, (label, cgpa) in enumerate(zip(labels, cgpas)):
-        fig.add_trace(go.Bar(
-            x=[label], y=[cgpa], name=label,
-            marker_color=colors[i],
-            text=[f"{cgpa:.2f}"], textposition="outside",
-            textfont=dict(color="white", family="Orbitron", size=14),
-        ))
-    fig.add_hline(y=7.0, line_dash="dash", line_color="#ff4757", line_width=2,
-                  annotation_text="Scholarship Threshold (7.0)")
-    fig.update_layout(
-        title="CGPA: Scenario Comparison",
-        yaxis_title="Expected CGPA", yaxis_range=[0, 10],
-        showlegend=False, height=400, **BASE_LAYOUT,
+    corr = data[cols].corr(numeric_only=True)
+
+    # Custom dark color scale: deep black → dim gray → bright white
+    dark_scale = [
+        [0.0, "#1a0000"],
+        [0.25, "#4a2020"],
+        [0.5, "#2a2a2a"],
+        [0.75, "#607080"],
+        [1.0, "#ffffff"],
+    ]
+
+    fig = px.imshow(
+        corr,
+        text_auto=True,
+        aspect="auto",
+        color_continuous_scale=dark_scale,
+        zmin=-1,
+        zmax=1,
     )
+    fig.update_layout(
+        title="FEATURE CORRELATION HEATMAP",
+        height=520,
+        coloraxis_colorbar=dict(
+            tickfont=dict(color=TEXT_COLOR),
+            title_font=dict(color=TEXT_COLOR),
+        ),
+        **BASE_LAYOUT,
+    )
+    fig.update_traces(
+        textfont=dict(family="VT323, monospace", size=11, color=TEXT_COLOR),
+    )
+    _apply_dark_axes(fig)
+    return fig
+
+
+def risk_factor_breakdown(importance_df: pd.DataFrame, top_n: int = 12) -> go.Figure:
+    """Horizontal bar chart for strongest risk-driving features."""
+    if importance_df.empty:
+        return go.Figure()
+
+    top = importance_df.head(top_n).sort_values("importance", ascending=True)
+    fig = go.Figure(
+        go.Bar(
+            x=top["importance"],
+            y=top["feature"],
+            orientation="h",
+            marker_color=ACCENT,
+            marker_line=dict(color=ACCENT_DIM, width=1),
+        )
+    )
+    fig.update_layout(
+        title="RISK FACTOR BREAKDOWN (MODEL IMPORTANCE)",
+        xaxis_title="IMPORTANCE",
+        yaxis_title="FEATURE",
+        height=420,
+        **BASE_LAYOUT,
+    )
+    _apply_dark_axes(fig)
+    return fig
+
+
+def fee_payment_vs_risk(semester_view: pd.DataFrame) -> go.Figure:
+    """Grouped bar chart for risk rates by fee payment behavior."""
+    if semester_view.empty or "fee_payment_status" not in semester_view.columns:
+        return go.Figure()
+
+    grouped = (
+        semester_view.groupby(["department", "fee_payment_status"], as_index=False)["scholarship_at_risk"]
+        .mean()
+    )
+    grouped["risk_rate_pct"] = grouped["scholarship_at_risk"] * 100
+
+    # Monochrome palette for departments
+    mono_palette = ["#ffffff", "#cccccc", "#999999", "#777777", "#555555"]
+
+    fig = px.bar(
+        grouped,
+        x="fee_payment_status",
+        y="risk_rate_pct",
+        color="department",
+        barmode="group",
+        color_discrete_sequence=mono_palette,
+    )
+    fig.update_layout(
+        title="FEE PAYMENT STATUS VS AT-RISK RATE",
+        xaxis_title="FEE PAYMENT STATUS",
+        yaxis_title="AT-RISK RATE (%)",
+        height=380,
+        **BASE_LAYOUT,
+    )
+    _apply_dark_axes(fig)
+    return fig
+
+
+def roc_auc_history(history_df: pd.DataFrame) -> go.Figure:
+    """Line chart showing ROC-AUC across model versions."""
+    if history_df.empty:
+        return go.Figure()
+
+    temp = history_df.copy()
+    temp["version_num"] = temp["version"].str.replace("v", "", regex=False).astype(int)
+
+    fig = go.Figure(
+        go.Scatter(
+            x=temp["version_num"],
+            y=temp["roc_auc"],
+            mode="lines+markers",
+            line=dict(color=ACCENT, width=2),
+            marker=dict(size=8, color=ACCENT, symbol="square"),
+        )
+    )
+    fig.update_layout(
+        title="ROC-AUC ACROSS MODEL VERSIONS",
+        xaxis_title="MODEL VERSION",
+        yaxis_title="ROC-AUC",
+        height=320,
+        **BASE_LAYOUT,
+    )
+    fig.update_yaxes(range=[0, 1])
+    _apply_dark_axes(fig)
+    return fig
+
+
+def prediction_contribution_chart(contrib_df: pd.DataFrame) -> go.Figure:
+    """Small horizontal chart for per-prediction contribution approximations."""
+    if contrib_df.empty:
+        return go.Figure()
+
+    top = contrib_df.head(8).sort_values("contribution", ascending=True)
+    colors = [ALERT if v < 0 else ACCENT for v in top["contribution"]]
+
+    fig = go.Figure(
+        go.Bar(
+            x=top["contribution"],
+            y=top["feature"],
+            orientation="h",
+            marker_color=colors,
+            marker_line=dict(color=ACCENT_DIM, width=1),
+        )
+    )
+    fig.update_layout(
+        title="PREDICTION FEATURE CONTRIBUTIONS",
+        xaxis_title="RELATIVE CONTRIBUTION",
+        yaxis_title="",
+        height=320,
+        **BASE_LAYOUT,
+    )
+    _apply_dark_axes(fig)
     return fig

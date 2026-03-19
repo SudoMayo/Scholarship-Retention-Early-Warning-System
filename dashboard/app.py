@@ -558,42 +558,39 @@ with c4:
     )
 
 # ── Tabs ──────────────────────────────────────────────────────
-overview_tab, eda_tab, predictor_tab, history_tab = st.tabs(
-    ["OVERVIEW", "EDA INSIGHTS", "🎯 RISK PREDICTOR", "MODEL HISTORY"]
+predictor_tab, overview_tab, eda_tab, history_tab = st.tabs(
+    ["🎯 RISK PREDICTOR", "📊 OVERVIEW", "🔍 EDA INSIGHTS", "📈 MODEL HISTORY"]
 )
 
 with overview_tab:
-    st.subheader("Overview")
+    st.markdown("<div style='margin-bottom: 16px;'><strong>▸ SYSTEM OVERVIEW</strong></div>", unsafe_allow_html=True)
     oc1, oc2 = st.columns(2)
     with oc1:
-        st.plotly_chart(risk_distribution_donut_by_department(sem_view), use_container_width=True)
+        st.plotly_chart(risk_distribution_donut_by_department(sem_view), use_container_width=True, key="donut_all")
     with oc2:
-        st.plotly_chart(cgpa_trend_line(sem_view), use_container_width=True)
+        st.plotly_chart(cgpa_trend_line(sem_view), use_container_width=True, key="line_cgpa")
+    
+    st.plotly_chart(fee_payment_vs_risk(sem_view), use_container_width=True, key="bar_fees")
 
 with eda_tab:
-    st.subheader("EDA and Risk Drivers")
-    ec1, ec2 = st.columns(2)
-    with ec1:
-        numeric_features = [
-            "midterm_score",
-            "attendance_rate",
-            "assignment_average",
-            "quiz_average",
-            "study_hours_per_week",
-            "extracurricular_load",
-            "previous_sem_gpa",
-            "counselling_sessions_attended",
-            "library_usage_hours_per_week",
-            "mental_health_score",
-            "cgpa_this_semester",
-            "cgpa_trend",
-            "scholarship_at_risk",
-        ]
-        st.plotly_chart(feature_correlation_heatmap(data, numeric_features), use_container_width=True)
-    with ec2:
-        st.plotly_chart(risk_factor_breakdown(importance_df), use_container_width=True)
-
-    st.plotly_chart(fee_payment_vs_risk(sem_view), use_container_width=True)
+    st.markdown("<div style='margin-bottom: 16px;'><strong>▸ EXPLORATORY DATA ANALYSIS & RISK DRIVERS</strong></div>", unsafe_allow_html=True)
+    numeric_features = [
+        "midterm_score",
+        "attendance_rate",
+        "assignment_average",
+        "quiz_average",
+        "study_hours_per_week",
+        "extracurricular_load",
+        "previous_sem_gpa",
+        "counselling_sessions_attended",
+        "library_usage_hours_per_week",
+        "mental_health_score",
+        "cgpa_this_semester",
+        "cgpa_trend",
+        "scholarship_at_risk",
+    ]
+    st.plotly_chart(feature_correlation_heatmap(data, numeric_features), use_container_width=True, key="heatmap_corr")
+    st.plotly_chart(risk_factor_breakdown(importance_df), use_container_width=True, key="bar_importance")
 
 with predictor_tab:
     st.subheader("🎯 Scholarship Risk Predictor")
@@ -601,91 +598,111 @@ with predictor_tab:
     if artifact is None:
         st.info("Train a model to use prediction.")
     else:
-        fc1, fc2, fc3 = st.columns(3)
-        with fc1:
-            department = st.selectbox("Department", ["CS", "ECE", "ME", "CE", "EE"])
-            year = st.selectbox("Year", [1, 2, 3, 4], index=1)
-            scholarship_tier = st.selectbox(
-                "Scholarship Tier",
-                ["Merit-100%", "Merit-75%", "Merit-50%", "Need-Based"],
+        left_col, right_col = st.columns([2.2, 1], gap="large")
+        
+        with left_col:
+            st.markdown(
+                "<p class='accent-header' style='margin-bottom: 16px;'>▸ STUDENT PROFILE & METRICS</p>", 
+                unsafe_allow_html=True
             )
-            family_income_bracket = st.selectbox(
-                "Family Income Bracket", ["low", "lower_mid", "mid", "upper_mid"]
-            )
-            fee_payment_status = st.selectbox(
-                "Fee Payment Status", ["on_time", "late", "defaulted"]
-            )
-            hostel_resident = st.checkbox("Hostel Resident", value=True)
-
-        with fc2:
-            midterm_score = st.slider("Midterm Score", 0.0, 100.0, 68.0)
-            attendance_rate = st.slider("Attendance Rate", 35.0, 100.0, 78.0)
-            assignment_average = st.slider("Assignment Average", 0.0, 100.0, 70.0)
-            quiz_average = st.slider("Quiz Average", 0.0, 100.0, 66.0)
-            study_hours_per_week = st.slider("Study Hours/Week", 3.0, 35.0, 14.0)
-            extracurricular_load = st.slider("Extracurricular Load", 0.0, 10.0, 3.0)
-
-        with fc3:
-            previous_sem_gpa = st.slider("Previous Semester GPA", 0.0, 10.0, 7.1)
-            counselling_sessions_attended = st.slider("Counselling Sessions", 0, 5, 1)
-            library_usage_hours_per_week = st.slider("Library Usage Hours/Week", 0.0, 30.0, 6.0)
-            mental_health_score = st.slider("Mental Health Score", 1.0, 10.0, 6.5)
-
-        if st.button("⚡ RUN RISK PREDICTION", type="primary"):
-            form_values = {
-                "department": department,
-                "year": year,
-                "scholarship_tier": scholarship_tier,
-                "midterm_score": midterm_score,
-                "attendance_rate": attendance_rate,
-                "assignment_average": assignment_average,
-                "quiz_average": quiz_average,
-                "study_hours_per_week": study_hours_per_week,
-                "extracurricular_load": extracurricular_load,
-                "previous_sem_gpa": previous_sem_gpa,
-                "family_income_bracket": family_income_bracket,
-                "fee_payment_status": fee_payment_status,
-                "hostel_resident": hostel_resident,
-                "counselling_sessions_attended": counselling_sessions_attended,
-                "library_usage_hours_per_week": library_usage_hours_per_week,
-                "mental_health_score": mental_health_score,
-            }
-
-            row_df = build_prediction_row(form_values)
-            pipeline = artifact["model"]
-            proba = float(pipeline.predict_proba(row_df)[0, 1])
-            pred = int(proba >= 0.5)
-
-            if pred == 1:
-                st.markdown(
-                    f"<div class='predict-card predict-risk'>⚠ AT RISK // PROBABILITY: {proba:.1%}</div>",
-                    unsafe_allow_html=True,
+            fc1, fc2, fc3 = st.columns(3)
+            with fc1:
+                department = st.selectbox("Department", ["CS", "ECE", "ME", "CE", "EE"])
+                year = st.selectbox("Year", [1, 2, 3, 4], index=1)
+                scholarship_tier = st.selectbox(
+                    "Scholarship Tier",
+                    ["Merit-100%", "Merit-75%", "Merit-50%", "Need-Based"],
                 )
+                family_income_bracket = st.selectbox(
+                    "Family Income Bracket", ["low", "lower_mid", "mid", "upper_mid"]
+                )
+                fee_payment_status = st.selectbox(
+                    "Fee Payment Status", ["on_time", "late", "defaulted"]
+                )
+                hostel_resident = st.checkbox("Hostel Resident", value=True)
+
+            with fc2:
+                midterm_score = st.slider("Midterm Score", 0.0, 100.0, 68.0)
+                attendance_rate = st.slider("Attendance Rate", 35.0, 100.0, 78.0)
+                assignment_average = st.slider("Assignment Average", 0.0, 100.0, 70.0)
+                quiz_average = st.slider("Quiz Average", 0.0, 100.0, 66.0)
+                study_hours_per_week = st.slider("Study Hours/Week", 3.0, 35.0, 14.0)
+                extracurricular_load = st.slider("Extracurricular Load", 0.0, 10.0, 3.0)
+
+            with fc3:
+                previous_sem_gpa = st.slider("Previous Semester GPA", 0.0, 10.0, 7.1)
+                counselling_sessions_attended = st.slider("Counselling Sessions", 0, 5, 1)
+                library_usage_hours_per_week = st.slider("Library Usage Hours/Week", 0.0, 30.0, 6.0)
+                mental_health_score = st.slider("Mental Health Score", 1.0, 10.0, 6.5)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            predict_clicked = st.button("⚡ RUN RISK PREDICTION", type="primary", use_container_width=True)
+
+        with right_col:
+            st.markdown(
+                "<p class='accent-header' style='margin-bottom: 16px;'>▸ PREDICTION ENGINE OUTPUT</p>", 
+                unsafe_allow_html=True
+            )
+            
+            if predict_clicked:
+                form_values = {
+                    "department": department,
+                    "year": year,
+                    "scholarship_tier": scholarship_tier,
+                    "midterm_score": midterm_score,
+                    "attendance_rate": attendance_rate,
+                    "assignment_average": assignment_average,
+                    "quiz_average": quiz_average,
+                    "study_hours_per_week": study_hours_per_week,
+                    "extracurricular_load": extracurricular_load,
+                    "previous_sem_gpa": previous_sem_gpa,
+                    "family_income_bracket": family_income_bracket,
+                    "fee_payment_status": fee_payment_status,
+                    "hostel_resident": hostel_resident,
+                    "counselling_sessions_attended": counselling_sessions_attended,
+                    "library_usage_hours_per_week": library_usage_hours_per_week,
+                    "mental_health_score": mental_health_score,
+                }
+
+                row_df = build_prediction_row(form_values)
+                pipeline = artifact["model"]
+                proba = float(pipeline.predict_proba(row_df)[0, 1])
+                pred = int(proba >= 0.5)
+
+                if pred == 1:
+                    st.markdown(
+                        f"<div class='predict-card predict-risk'>⚠ AT RISK // PROB: {proba:.1%}</div>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown(
+                        f"<div class='predict-card predict-safe'>✓ SAFE // PROB: {(1-proba):.1%}</div>",
+                        unsafe_allow_html=True,
+                    )
+
+                contrib_rows = []
+                importance_lookup = dict(zip(importance_df["feature"], importance_df["importance"]))
+                for col, value in row_df.iloc[0].items():
+                    if isinstance(value, str):
+                        feat_name = f"cat__{col}_{value}"
+                        contribution = float(importance_lookup.get(feat_name, 0.0))
+                    else:
+                        feat_name = f"num__{col}"
+                        base = float(importance_lookup.get(feat_name, 0.0))
+                        contribution = float(base * value)
+                    contrib_rows.append({"feature": col, "contribution": contribution})
+
+                contrib_df = (
+                    pd.DataFrame(contrib_rows)
+                    .assign(contribution=lambda frame: frame["contribution"] / (frame["contribution"].abs().max() + 1e-6))
+                    .sort_values("contribution", key=lambda s: s.abs(), ascending=False)
+                )
+                st.plotly_chart(prediction_contribution_chart(contrib_df), use_container_width=True, key="bar_contrib")
             else:
                 st.markdown(
-                    f"<div class='predict-card predict-safe'>✓ SAFE // PROBABILITY: {(1-proba):.1%}</div>",
-                    unsafe_allow_html=True,
+                    "<div class='predict-card' style='background: var(--bg-card); color: var(--text-dim); border: 2px dashed var(--border); box-shadow: none;'>AWAITING INPUT...<br><br>CLICK RUN TO START ENGINE</div>", 
+                    unsafe_allow_html=True
                 )
-
-            # Approximate contributions from model importance and current values.
-            contrib_rows = []
-            importance_lookup = dict(zip(importance_df["feature"], importance_df["importance"]))
-            for col, value in row_df.iloc[0].items():
-                if isinstance(value, str):
-                    feat_name = f"cat__{col}_{value}"
-                    contribution = float(importance_lookup.get(feat_name, 0.0))
-                else:
-                    feat_name = f"num__{col}"
-                    base = float(importance_lookup.get(feat_name, 0.0))
-                    contribution = float(base * value)
-                contrib_rows.append({"feature": col, "contribution": contribution})
-
-            contrib_df = (
-                pd.DataFrame(contrib_rows)
-                .assign(contribution=lambda frame: frame["contribution"] / (frame["contribution"].abs().max() + 1e-6))
-                .sort_values("contribution", key=lambda s: s.abs(), ascending=False)
-            )
-            st.plotly_chart(prediction_contribution_chart(contrib_df), use_container_width=True)
 
 with history_tab:
     st.subheader("Model Timeline and Post-Mortem")
@@ -694,7 +711,7 @@ with history_tab:
         st.info("No model registry entries found.")
     else:
         st.dataframe(history_df, use_container_width=True, hide_index=True)
-        st.plotly_chart(roc_auc_history(history_df), use_container_width=True)
+        st.plotly_chart(roc_auc_history(history_df), use_container_width=True, key="line_roc")
 
         latest_version = history_df.iloc[-1]["version"]
         st.markdown(
